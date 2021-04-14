@@ -63,7 +63,7 @@ npm run lint
 * html 
 * css
 * javascript
-* [Vue](https://vuejs.org/) (for components, states and scoped styles)
-* [Vue CLI](https://cli.vuejs.org/) (for build tools)
-* [Vuetify](https://vuetifyjs.com/en/) (for global dark styles)
-* [Jest](https://jestjs.io/) (for testing)
+* [Vue](https://vuejs.org/)
+* [Vue CLI](https://cli.vuejs.org/)
+* [Vuetify](https://vuetifyjs.com/en/)
+* [Jest](https://jestjs.io/)

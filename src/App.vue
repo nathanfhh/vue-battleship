@@ -17,7 +17,8 @@
   </v-app>
 </template>
 
-<script>
+<script setup>
+import { ref } from 'vue'
 import TheNavBar from './components/TheNavBar.vue'
 import TheGameMenu from './components/TheGameMenu.vue'
 import TheGameBoardRedactor from './components/TheGameBoardRedactor.vue'
@@ -25,134 +26,119 @@ import TheGame from './components/TheGame.vue'
 
 import createPlayer from './scripts/createPlayer'
 
-export default {
-  name: 'App',
-
-  components: {
-    TheGame,
-    TheNavBar,
-    TheGameMenu,
-    TheGameBoardRedactor,
+const isGameMenuOpen = ref(true)
+const isGameBoardRedactorOpen = ref(false)
+const gameMenuOptions = ref({
+  resume: {
+    isDisabled: true,
   },
+})
+const pl = ref(null)
+const pc = ref(null)
+const plHasDamaged = ref(false)
+const pcHasDamaged = ref(false)
+const gameHasAwinner = ref(false)
 
-  data: () => ({
-    isGameMenuOpen: true,
-    isGameBoardRedactorOpen: false,
-    gameMenuOptions: {
-      resume: {
-        isDisabled: true,
-      },
-    },
-    pl: null,
-    pc: null,
-    plHasDamaged: false,
-    pcHasDamaged: false,
-    gameHasAwinner: false,
-  }),
+const hideGameMenu = () => {
+  isGameMenuOpen.value = false
+}
 
-  methods: {
-    hideGameMenu() {
-      this.isGameMenuOpen = false
-    },
+const handleShowGameMenu = () => {
+  isGameMenuOpen.value = true
+}
 
-    handleShowGameMenu() {
-      this.isGameMenuOpen = true
-    },
+const openGameBoardRedactor = () => {
+  isGameBoardRedactorOpen.value = true
+}
 
-    openGameBoardRedactor() {
-      this.isGameBoardRedactorOpen = true
-    },
+const closeGameBoardRedactor = () => {
+  isGameBoardRedactorOpen.value = false
+}
 
-    closeGameBoardRedactor() {
-      this.isGameBoardRedactorOpen = false
-    },
+const handleNewGame = () => {
+  gameHasAwinner.value = false
+  gameMenuOptions.value.resume.isDisabled = false
 
-    handleNewGame() {
-      this.gameHasAwinner = false
-      this.gameMenuOptions.resume.isDisabled = false
+  hideGameMenu()
+  openGameBoardRedactor()
+  game.value.resetTheGame()
+}
 
-      this.hideGameMenu()
-      this.openGameBoardRedactor()
-      this.$refs.game.resetTheGame()
-    },
+const handleResumeGame = () => {
+  hideGameMenu()
+}
 
-    handleResumeGame() {
-      this.hideGameMenu()
-    },
+const handleStartGame = (plBoard, plBoardElement, pcBoard, pcBoardElement) => {
+  closeGameBoardRedactor()
 
-    handleStartGame(plBoard, plBoardElement, pcBoard, pcBoardElement) {
-      this.closeGameBoardRedactor()
+  pl.value = createPlayer({ board: plBoard })
+  pc.value = createPlayer({ board: pcBoard, isPc: true })
 
-      this.pl = createPlayer({ board: plBoard })
-      this.pc = createPlayer({ board: pcBoard, isPc: true })
+  game.value.initTheGame(plBoardElement, pcBoardElement, pl.value, pc.value)
+}
 
-      this.$refs.game.initTheGame(plBoardElement, pcBoardElement, this.pl, this.pc)
-    },
+const handleRound = (pcCordAttack) => {
+  if (!gameHasAwinner.value) {
+    plHasDamaged.value = makePlTurn(pcCordAttack)
+    game.value.updateTheBoardsInfo()
 
-    handleRound(pcCordAttack) {
-      if (!this.gameHasAwinner) {
-        this.plHasDamaged = this.makePlTurn(pcCordAttack)
-        this.$refs.game.updateTheBoardsInfo()
+    if (pc.value.getBoard().isAllShipsSunk()) {
+      gameHasAwinner.value = true
+      gameMenuOptions.value.resume.isDisabled = true
+      game.value.updateGameInfo('Congratulations you won The Game', 'rgb(43, 197, 87)')
+      setTimeout(handleShowGameMenu, 3000)
 
-        if (this.pc.getBoard().isAllShipsSunk()) {
-          this.gameHasAwinner = true
-          this.gameMenuOptions.resume.isDisabled = true
-          this.$refs.game.updateGameInfo('Congratulations you won The Game', 'rgb(43, 197, 87)')
-          setTimeout(this.handleShowGameMenu, 3000)
+      return
+    }
+
+    if (plHasDamaged.value) return
+
+    game.value.updateGameInfo('Pc Turn!', 'rgb(226, 54, 54)')
+    game.value.disablePcBoard()
+
+    const delayPcTurn = (ms) => {
+      setTimeout(() => {
+        pcHasDamaged.value = makePcTurn()
+        game.value.updateTheBoardsInfo()
+
+        if (pl.value.getBoard().isAllShipsSunk()) {
+          gameHasAwinner.value = true
+          gameMenuOptions.value.resume.isDisabled = true
+          game.value.updateGameInfo('Pc won The Game!', 'rgb(226, 54, 54)')
+          setTimeout(handleShowGameMenu, 3000)
 
           return
         }
 
-        if (this.plHasDamaged) return
+        if (pcHasDamaged.value) {
+          delayPcTurn(ms)
 
-        this.$refs.game.updateGameInfo('Pc Turn!', 'rgb(226, 54, 54)')
-        this.$refs.game.disablePcBoard()
-
-        const delayPcTurn = (ms) => {
-          setTimeout(() => {
-            this.pcHasDamaged = this.makePcTurn()
-            this.$refs.game.updateTheBoardsInfo()
-
-            if (this.pl.getBoard().isAllShipsSunk()) {
-              this.gameHasAwinner = true
-              this.gameMenuOptions.resume.isDisabled = true
-              this.$refs.game.updateGameInfo('Pc won The Game!', 'rgb(226, 54, 54)')
-              setTimeout(this.handleShowGameMenu, 3000)
-
-              return
-            }
-
-            if (this.pcHasDamaged) {
-              delayPcTurn(ms)
-
-              return
-            }
-
-            this.$refs.game.updateGameInfo('Your Turn!', 'rgb(43, 197, 87)')
-            this.$refs.game.enablePcBoard()
-          }, ms)
+          return
         }
 
-        delayPcTurn(500)
-      }
-    },
+        game.value.updateGameInfo('Your Turn!', 'rgb(43, 197, 87)')
+        game.value.enablePcBoard()
+      }, ms)
+    }
 
-    makePlTurn(pcCordAttack) {
-      const { x, y } = JSON.parse(pcCordAttack)
-      const attackInfo = this.pl.attack({ player: this.pc, x, y })
-      this.$refs.game.updatePcBoard(pcCordAttack, attackInfo)
+    delayPcTurn(500)
+  }
+}
 
-      return attackInfo === true || attackInfo.damagedShipData
-    },
+const makePlTurn = (pcCordAttack) => {
+  const { x, y } = JSON.parse(pcCordAttack)
+  const attackInfo = pl.value.attack({ player: pc.value, x, y })
+  game.value.updatePcBoard(pcCordAttack, attackInfo)
 
-    makePcTurn() {
-      const { attackInfo, cord } = this.pc.attack({ player: this.pl })
-      const { x, y } = cord
-      this.$refs.game.updatePlBoard(JSON.stringify({ x, y }), attackInfo)
+  return attackInfo === true || attackInfo.damagedShipData
+}
 
-      return attackInfo === true || attackInfo.damagedShipData
-    },
-  },
+const makePcTurn = () => {
+  const { attackInfo, cord } = pc.value.attack({ player: pl.value })
+  const { x, y } = cord
+  game.value.updatePlBoard(JSON.stringify({ x, y }), attackInfo)
+
+  return attackInfo === true || attackInfo.damagedShipData
 }
 </script>
 

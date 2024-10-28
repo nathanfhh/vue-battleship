@@ -1,4 +1,4 @@
-import { getRandomCord, isCordsValid } from './createGameBoard'
+import { getRandomCoordinate, isCoordinatesValid } from './createGameBoard'
 
 const getValidName = (name, isPc) => {
   if (!name && !isPc) {
@@ -16,11 +16,11 @@ const playerAttack = ({ player, x, y }) => player.receiveAttack({ x, y })
 
 const tracker = {
   isVertical: null,
-  adjacentCords: null,
-  backwardCord: null,
-  forwardCord: null,
-  initCord: null,
-  damagedShipsCords: null,
+  adjacentCoordinates: null,
+  backwardCoordinate: null,
+  forwardCoordinate: null,
+  initialCoordinate: null,
+  damagedShipsCoordinates: null,
   isBackWardFirst: null,
 }
 
@@ -30,139 +30,139 @@ const pcAttack = ({ player }) => {
   let y
 
   const makeBackwardAttack = () => {
-    ({ x, y } = tracker.backwardCord)
+    ({ x, y } = tracker.backwardCoordinate)
 
     if (tracker.isVertical) {
       y -= 1
 
       // eslint-disable-next-line no-loop-func
-      if (tracker.damagedShipsCords.find((c) => (c.x === x && c.y === y))) {
+      if (tracker.damagedShipsCoordinates.find((c) => (c.x === x && c.y === y))) {
         y -= 1
       }
     } else {
       x -= 1
 
       // eslint-disable-next-line no-loop-func
-      if (tracker.damagedShipsCords.find((c) => (c.x === x && c.y === y))) {
+      if (tracker.damagedShipsCoordinates.find((c) => (c.x === x && c.y === y))) {
         x -= 1
       }
     }
 
-    if (isCordsValid({ x, y })) {
-      tracker.backwardCord = { x, y }
+    if (isCoordinatesValid({ x, y })) {
+      tracker.backwardCoordinate = { x, y }
       attackInfo = player.receiveAttack({ x, y })
 
       if (attackInfo === true) {
-        tracker.damagedShipsCords.push({ x, y })
+        tracker.damagedShipsCoordinates.push({ x, y })
       }
     } else {
-      tracker.backwardCord = null
+      tracker.backwardCoordinate = null
       attackInfo = '*'
     }
 
     if (attackInfo === '*' || attackInfo === false) {
-      tracker.backwardCord = null
+      tracker.backwardCoordinate = null
     }
   }
 
   const makeForwardAttack = () => {
-    ({ x, y } = tracker.forwardCord)
+    ({ x, y } = tracker.forwardCoordinate)
 
     if (tracker.isVertical) {
       y += 1
 
       // eslint-disable-next-line no-loop-func
-      if (tracker.damagedShipsCords.find((c) => (c.x === x && c.y === y))) {
+      if (tracker.damagedShipsCoordinates.find((c) => (c.x === x && c.y === y))) {
         y += 1
       }
     } else {
       x += 1
 
       // eslint-disable-next-line no-loop-func
-      if (tracker.damagedShipsCords.find((c) => (c.x === x && c.y === y))) {
+      if (tracker.damagedShipsCoordinates.find((c) => (c.x === x && c.y === y))) {
         x += 1
       }
     }
 
-    if (isCordsValid({ x, y })) {
-      tracker.forwardCord = { x, y }
+    if (isCoordinatesValid({ x, y })) {
+      tracker.forwardCoordinate = { x, y }
       attackInfo = player.receiveAttack({ x, y })
 
       if (attackInfo === true) {
-        tracker.damagedShipsCords.push({ x, y })
+        tracker.damagedShipsCoordinates.push({ x, y })
       }
     } else {
-      tracker.forwardCord = null
+      tracker.forwardCoordinate = null
       attackInfo = '*'
     }
 
     if (attackInfo === '*' || attackInfo === false) {
-      tracker.forwardCord = null
+      tracker.forwardCoordinate = null
     }
   }
 
   do {
-    if (tracker.adjacentCords) {
-      const random = Math.floor(Math.random() * tracker.adjacentCords.length);
-      ({ x, y } = tracker.adjacentCords[random])
+    if (tracker.adjacentCoordinates) {
+      const random = Math.floor(Math.random() * tracker.adjacentCoordinates.length);
+      ({ x, y } = tracker.adjacentCoordinates[random])
       attackInfo = player.receiveAttack({ x, y })
 
       if (attackInfo === true) {
-        tracker.isVertical = tracker.initCord.y !== y
-        const { initCord } = tracker
+        tracker.isVertical = tracker.initialCoordinate.y !== y
+        const { initialCoordinate } = tracker
 
-        tracker.backwardCord = { ...initCord }
-        tracker.forwardCord = { ...initCord }
+        tracker.backwardCoordinate = { ...initialCoordinate }
+        tracker.forwardCoordinate = { ...initialCoordinate }
         tracker.isBackWardFirst = Math.floor(Math.random() * 2) === 1
 
-        tracker.damagedShipsCords.push({ x, y })
-        tracker.adjacentCords = null
+        tracker.damagedShipsCoordinates.push({ x, y })
+        tracker.adjacentCoordinates = null
       }
-    } else if (tracker.backwardCord && (tracker.isBackWardFirst || !tracker.forwardCord)) {
+    } else if (tracker.backwardCoordinate && (tracker.isBackWardFirst || !tracker.forwardCoordinate)) {
       makeBackwardAttack()
-    } else if (tracker.forwardCord && (!tracker.isBackWardFirst || !tracker.backwardCord)) {
+    } else if (tracker.forwardCoordinate && (!tracker.isBackWardFirst || !tracker.backwardCoordinate)) {
       makeForwardAttack()
     } else {
-      x = getRandomCord()
-      y = getRandomCord()
+      x = getRandomCoordinate()
+      y = getRandomCoordinate()
       attackInfo = player.receiveAttack({ x, y })
     }
   } while (attackInfo === '*')
 
   if (attackInfo === true
-    && !tracker.backwardCord
-    && !tracker.forwardCord
-    && !tracker.adjacentCords
+    && !tracker.backwardCoordinate
+    && !tracker.forwardCoordinate
+    && !tracker.adjacentCoordinates
   ) {
-    tracker.initCord = { x, y }
-    tracker.damagedShipsCords = []
-    tracker.adjacentCords = []
-    tracker.damagedShipsCords.push({ x, y })
+    tracker.initialCoordinate = { x, y }
+    tracker.damagedShipsCoordinates = []
+    tracker.adjacentCoordinates = []
+    tracker.damagedShipsCoordinates.push({ x, y })
 
-    if (isCordsValid({ x: x - 1, y })) {
-      tracker.adjacentCords.push({ x: x - 1, y })
+    if (isCoordinatesValid({ x: x - 1, y })) {
+      tracker.adjacentCoordinates.push({ x: x - 1, y })
     }
 
-    if (isCordsValid({ x: x + 1, y })) {
-      tracker.adjacentCords.push({ x: x + 1, y })
+    if (isCoordinatesValid({ x: x + 1, y })) {
+      tracker.adjacentCoordinates.push({ x: x + 1, y })
     }
 
-    if (isCordsValid({ x, y: y - 1 })) {
-      tracker.adjacentCords.push({ x, y: y - 1 })
+    if (isCoordinatesValid({ x, y: y - 1 })) {
+      tracker.adjacentCoordinates.push({ x, y: y - 1 })
     }
 
-    if (isCordsValid({ x, y: y + 1 })) {
-      tracker.adjacentCords.push({ x, y: y + 1 })
+    if (isCoordinatesValid({ x, y: y + 1 })) {
+      tracker.adjacentCoordinates.push({ x, y: y + 1 })
     }
   }
 
   if (attackInfo.damagedShipData) {
     tracker.isVertical = null
-    tracker.adjacentCords = null
-    tracker.backwardCord = null
-    tracker.forwardCord = null
-    tracker.initCord = null
-    tracker.damagedShipsCords = null
+    tracker.adjacentCoordinates = null
+    tracker.backwardCoordinate = null
+    tracker.forwardCoordinate = null
+    tracker.initialCoordinate = null
+    tracker.damagedShipsCoordinates = null
     tracker.isBackWardFirst = null
   }
 

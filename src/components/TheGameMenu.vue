@@ -19,20 +19,16 @@
   </v-dialog>
 </template>
 
-<script>
-export default {
-  name: 'TheGameMenu',
+<script setup>
+import { defineProps } from 'vue'
 
-  props: {
-    isOpen: Boolean,
-    options: Object,
-  },
+const props = defineProps({
+  isOpen: Boolean,
+  options: Object,
+})
 
-  methods: {
-    handleOpenRepo() {
-      window.open('https://github.com/JoshAubrey/vue-battleship', '_blank')
-    },
-  },
+const handleOpenRepo = () => {
+  window.open('https://github.com/JoshAubrey/vue-battleship', '_blank')
 }
 </script>
 

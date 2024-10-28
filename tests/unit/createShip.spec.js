@@ -31,13 +31,13 @@ describe('createShip', () => {
     expect(
       ship
         .hitAt(40)
-        .getLives()
+        .getHitPositions()
         .join(''),
     ).toBe('')
     expect(
       ship
         .hitAt(0)
-        .getLives()
+        .getHitPositions()
         .join(''),
     ).toBe('')
   })
@@ -56,14 +56,14 @@ describe('createShip', () => {
     expect(
       createShip({ length: 3 })
         .hitAt({ position: 2 })
-        .getLives()[0],
+        .getHitPositions()[0],
     ).toBeFalsy()
   })
 
   it('return an empty array if the ship is healthy', () => {
     expect(
       createShip({ length: 3 })
-        .getLives()
+        .getHitPositions()
         .join(''),
     ).toBe('')
   })
@@ -75,17 +75,17 @@ describe('createShip', () => {
     expect(
       ship
         .hitAt({ position: 2 })
-        .getLives()
+        .getHitPositions()
         .join(''),
     ).toBe('x')
 
     expect(
       ship
         .hitAt({ position: 1 })
-        .getLives()
+        .getHitPositions()
         .join(''),
     ).toBe('xx')
 
-    expect(ship.getLives().join('').length).toBe(ship.getLength())
+    expect(ship.getHitPositions().join('').length).toBe(ship.getLength())
   })
 })

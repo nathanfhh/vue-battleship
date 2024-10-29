@@ -19,6 +19,7 @@
       <QuestionModal
           v-if="showQuestionModal"
           :question="currentQuestion"
+          :type="currentQuestion.type"
           @answered="handleQuestionAnswered"
       />
     </v-content>
@@ -51,6 +52,8 @@ const pcHasDamaged = ref(false)
 const gameHasAwinner = ref(false)
 const showQuestionModal = ref(false)
 const currentQuestion = ref(null)
+const pcCordAttack = ref(null)
+const answeredQuestions = ref([])
 
 const hideGameMenu = () => {
   isGameMenuOpen.value = false
@@ -160,6 +163,7 @@ const handleQuestionAnswered = (isCorrect) => {
     const attackInfo = pl.value.attack({player: pc.value, x, y})
     game.value.updatePcBoard(pcCordAttack, attackInfo)
     plHasDamaged.value = attackInfo === true || attackInfo.damagedShipData
+    answeredQuestions.value.push(currentQuestion.value)
   } else {
     plHasDamaged.value = false
   }

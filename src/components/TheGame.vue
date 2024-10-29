@@ -10,6 +10,7 @@
     <QuestionModal
       v-if="showQuestionModal"
       :question="currentQuestion"
+      :type="currentQuestion.type"
       @answered="handleQuestionAnswered"
     />
   </div>
@@ -33,6 +34,7 @@ const emit = defineEmits(['round'])
 const showQuestionModal = ref(false)
 const currentQuestion = ref(null)
 const pcCordAttack = ref(null)
+const answeredQuestions = ref([])
 
 const initTheGame = (plBoardEle, pcBoardEle, humanPlayer, computerPlayer) => {
   plElement.value = document.querySelector('.pl')
@@ -235,15 +237,17 @@ const makePlTurn = (pcCordAttack) => {
   const {x, y} = JSON.parse(pcCordAttack)
   currentQuestion.value = getRandomQuestion()
   showQuestionModal.value = true
+  pcCordAttack.value = pcCordAttack
   return false
 }
 
 const handleQuestionAnswered = (isCorrect) => {
   showQuestionModal.value = false
   if (isCorrect) {
-    const {x, y} = JSON.parse(pcCordAttack)
+    const {x, y} = JSON.parse(pcCordAttack.value)
     const attackInfo = pl.value.attack({player: pc.value, x, y})
-    updatePcBoard(pcCordAttack, attackInfo)
+    updatePcBoard(pcCordAttack.value, attackInfo)
+    answeredQuestions.value.push(currentQuestion.value)
     return attackInfo === true || attackInfo.damagedShipData
   } else {
     return false

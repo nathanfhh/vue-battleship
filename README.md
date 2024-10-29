@@ -64,6 +64,6 @@ npm run lint
 * css
 * javascript
 * [Vue](https://vuejs.org/)
-* [Vue CLI](https://cli.vuejs.org/)
+* [Vite](https://vitejs.dev/)
 * [Vuetify](https://vuetifyjs.com/en/)
 * [Jest](https://jestjs.io/)

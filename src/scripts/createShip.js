@@ -11,19 +11,19 @@ const trimLength = (length) => {
 const isBetweenRange = (position) => MIN_LENGTH <= position && position <= MAX_LENGTH
 
 const createShip = ({ length }) => {
-  const lives = []
+  const hitPositions = []
   const shipLength = trimLength(length)
 
   return {
     getLength: () => shipLength,
 
-    getLives: () => [...lives],
+    getHitPositions: () => [...hitPositions],
 
-    isSunk: () => lives.join('').length === shipLength,
+    isSunk: () => hitPositions.join('').length === shipLength,
 
     hitAt({ position }) {
       if (isBetweenRange(position)) {
-        lives[position - 1] = 'x'
+        hitPositions[position - 1] = 'x'
       }
 
       return this

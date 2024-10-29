@@ -8,15 +8,9 @@
   </nav>
 </template>
 
-<script>
-export default {
-  name: 'TheNavBar',
-
-  methods: {
-    handleOpenRepo() {
-      window.open('https://github.com/JoshAubrey/vue-battleship', '_blank')
-    },
-  },
+<script setup>
+const handleOpenRepo = () => {
+  window.open('https://github.com/JoshAubrey/vue-battleship', '_blank')
 }
 </script>
 

@@ -63,6 +63,6 @@ describe('player', () => {
     const player2 = createPlayer({ board })
 
     expect(player1.attack({ player: player2, x: 6, y: 8 })
-      .damagedShipData.cords[0]).toEqual({ x: 6, y: 8 })
+      .damagedShipData.coordinates[0]).toEqual({ x: 6, y: 8 })
   })
 })

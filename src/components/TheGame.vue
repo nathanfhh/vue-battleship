@@ -10,221 +10,215 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: 'TheGame',
+<script setup>
+import { ref } from 'vue'
 
-  data: () => ({
-    isGameInitiated: false,
-    plElement: null,
-    pcElement: null,
-    plBoardElement: null,
-    pcBoardElement: null,
-    plBoardInfoElement: null,
-    pcBoardInfoElement: null,
-    gameInfo: null,
-    pl: null,
-    pc: null,
-  }),
+const isGameInitiated = ref(false)
+const plElement = ref(null)
+const pcElement = ref(null)
+const plBoardElement = ref(null)
+const pcBoardElement = ref(null)
+const plBoardInfoElement = ref(null)
+const pcBoardInfoElement = ref(null)
+const gameInfo = ref(null)
+const pl = ref(null)
+const pc = ref(null)
 
-  methods: {
-    initTheGame(plBoardElement, pcBoardElement, pl, pc) {
-      this.plElement = document.querySelector('.pl')
-      this.pcElement = document.querySelector('.pc')
-      this.gameInfo = document.querySelector('.game-info')
-      this.plBoardElement = plBoardElement
-      this.pcBoardElement = pcBoardElement
-      this.pl = pl
-      this.pc = pc
+const initTheGame = (plBoardElement, pcBoardElement, pl, pc) => {
+  plElement.value = document.querySelector('.pl')
+  pcElement.value = document.querySelector('.pc')
+  gameInfo.value = document.querySelector('.game-info')
+  plBoardElement.value = plBoardElement
+  pcBoardElement.value = pcBoardElement
+  pl.value = pl
+  pc.value = pc
 
-      this.renderTheBoards()
-      this.renderTheBoardsInfo()
-      this.updateTheBoardsInfo()
-      this.updateGameInfo('Your Turn!')
-      this.addPcBoardEvent()
+  renderTheBoards()
+  renderTheBoardsInfo()
+  updateTheBoardsInfo()
+  updateGameInfo('Your Turn!')
+  addPcBoardEvent()
 
-      this.isGameInitiated = true
-    },
+  isGameInitiated.value = true
+}
 
-    renderTheBoards() {
-      this.plElement.appendChild(this.plBoardElement)
-      this.pcElement.appendChild(this.pcBoardElement)
-    },
+const renderTheBoards = () => {
+  plElement.value.appendChild(plBoardElement.value)
+  pcElement.value.appendChild(pcBoardElement.value)
+}
 
-    resetTheGame() {
-      if (this.isGameInitiated) {
-        this.updateGameInfo('')
-        this.plBoardElement.remove()
-        this.pcBoardElement.remove()
-        this.plBoardInfoElement.remove()
-        this.pcBoardInfoElement.remove()
+const resetTheGame = () => {
+  if (isGameInitiated.value) {
+    updateGameInfo('')
+    plBoardElement.value.remove()
+    pcBoardElement.value.remove()
+    plBoardInfoElement.value.remove()
+    pcBoardInfoElement.value.remove()
+  }
+}
+
+const addPcBoardEvent = () => {
+  pcBoardElement.value.addEventListener('click', (e) => {
+    if (e.target.classList.contains('spot')) {
+      emit('round', e.target.dataset.cord)
+    }
+  })
+}
+
+const updatePcBoard = (cord, response) => {
+  if (response === true) {
+    const spot = pcBoardElement.value
+      .querySelector(`.spot[data-cord=${JSON.stringify(cord)}]`)
+
+    spot.append('x')
+    spot.style.backgroundColor = 'rgb(248, 39, 39)'
+    spot.style.lineHeight = '1'
+    spot.style.pointerEvents = 'none'
+    spot.classList.toggle('resize')
+  }
+
+  if (response === false) {
+    const spot = pcBoardElement.value
+      .querySelector(`.spot[data-cord=${JSON.stringify(cord)}]`)
+
+    spot.append('*')
+    spot.style.pointerEvents = 'none'
+    spot.classList.toggle('resize')
+  }
+
+  if (response.damagedShipData) {
+    const { damagedShipData, clearedBorders } = response
+    const ship = document.createElement('div')
+    ship.classList.add('ship')
+
+    for (let i = 0; i < damagedShipData.ship.getLength(); i += 1) {
+      const part = document.createElement('div')
+      part.classList.add('part')
+      part.append('x')
+      ship.appendChild(part)
+    }
+
+    ship.classList.toggle('resize')
+
+    const firstSpot = pcBoardElement.value
+      .querySelector(`.spot[data-cord=${JSON.stringify(JSON.stringify(damagedShipData.cords[0]))}]`)
+
+    ship.style['grid-auto-flow'] = damagedShipData.isVertical ? 'row' : 'column'
+    ship.style.position = 'absolute'
+
+    if (firstSpot.firstChild) firstSpot.firstChild.remove()
+    firstSpot.appendChild(ship)
+
+    clearedBorders.forEach((borderCord) => {
+      const spotEl = pcBoardElement.value
+        .querySelector(`.spot[data-cord=${JSON.stringify(JSON.stringify(borderCord))}]`)
+
+      if (!spotEl.firstChild) {
+        spotEl.append('*')
+        spotEl.style.pointerEvents = 'none'
+        spotEl.classList.toggle('resize')
       }
-    },
+    })
+  }
+}
 
-    addPcBoardEvent() {
-      this.pcBoardElement.addEventListener('click', (e) => {
-        if (e.target.classList.contains('spot')) {
-          this.$emit('round', e.target.dataset.cord)
+const updatePlBoard = (cord, response) => {
+  if (response === true || response.damagedShipData) {
+    const part = plBoardElement.value
+      .querySelector(`.part[data-cord=${JSON.stringify(cord)}]`)
+
+    part.append('x')
+    part.style.backgroundColor = 'rgb(218, 100, 100)'
+    part.classList.toggle('resize')
+
+    if (response.damagedShipData) {
+      const { clearedBorders } = response
+
+      clearedBorders.forEach((borderCord) => {
+        const spotEl = plBoardElement.value
+          .querySelector(`.spot[data-cord=${JSON.stringify(JSON.stringify(borderCord))}]`)
+
+        if (!spotEl.firstChild) {
+          spotEl.append('*')
+          spotEl.classList.toggle('resize')
         }
       })
-    },
+    }
+  }
 
-    updatePcBoard(cord, response) {
-      if (response === true) {
-        const spot = this.pcBoardElement
-          .querySelector(`.spot[data-cord=${JSON.stringify(cord)}]`)
+  if (response === false) {
+    const spot = plBoardElement.value
+      .querySelector(`.spot[data-cord=${JSON.stringify(cord)}]`)
 
-        spot.append('x')
-        spot.style.backgroundColor = 'rgb(248, 39, 39)'
-        spot.style.lineHeight = '1'
-        spot.style.pointerEvents = 'none'
-        spot.classList.toggle('resize')
-      }
+    spot.append('*')
+    spot.classList.toggle('resize')
+  }
+}
 
-      if (response === false) {
-        const spot = this.pcBoardElement
-          .querySelector(`.spot[data-cord=${JSON.stringify(cord)}]`)
+const updateTheBoardsInfo = () => {
+  const updateInfoFor = (player, boardInfoElement) => {
+    const nameEl = boardInfoElement.firstElementChild
+    const aliveShipsEl = boardInfoElement.lastElementChild
+    const name = player.getName()
+    const aliveShips = player.getBoard().getAliveShipsCount()
 
-        spot.append('*')
-        spot.style.pointerEvents = 'none'
-        spot.classList.toggle('resize')
-      }
+    if (`${nameEl.textContent} Board` !== name) {
+      nameEl.textContent = `${name} Board`
+    }
 
-      if (response.damagedShipData) {
-        const { damagedShipData, clearedBorders } = response
-        const ship = document.createElement('div')
-        ship.classList.add('ship')
+    if (`Alive Ships: ${aliveShipsEl.textContent}` !== aliveShips) {
+      aliveShipsEl.textContent = `Alive Ships: ${aliveShips}`
+    }
+  }
 
-        for (let i = 0; i < damagedShipData.ship.getLength(); i += 1) {
-          const part = document.createElement('div')
-          part.classList.add('part')
-          part.append('x')
-          ship.appendChild(part)
-        }
+  updateInfoFor(pl.value, plBoardInfoElement.value)
+  updateInfoFor(pc.value, pcBoardInfoElement.value)
+}
 
-        ship.classList.toggle('resize')
+const renderTheBoardsInfo = () => {
+  const createBoardInfo = () => {
+    const infoElement = document.createElement('div')
+    const name = document.createElement('h3')
+    const aliveShips = document.createElement('h4')
 
-        const firstSpot = this.pcBoardElement
-          .querySelector(`.spot[data-cord=${JSON.stringify(JSON.stringify(damagedShipData.cords[0]))}]`)
+    infoElement.classList.add('board-info')
+    name.classList.add('name')
+    aliveShips.classList.add('alive-ships')
 
-        ship.style['grid-auto-flow'] = damagedShipData.isVertical ? 'row' : 'column'
-        ship.style.position = 'absolute'
+    infoElement.appendChild(name)
+    infoElement.appendChild(aliveShips)
 
-        if (firstSpot.firstChild) firstSpot.firstChild.remove()
-        firstSpot.appendChild(ship)
+    return infoElement
+  }
 
-        clearedBorders.forEach((borderCord) => {
-          const spotEl = this.pcBoardElement
-            .querySelector(`.spot[data-cord=${JSON.stringify(JSON.stringify(borderCord))}]`)
+  plBoardInfoElement.value = createBoardInfo()
+  pcBoardInfoElement.value = createBoardInfo()
 
-          if (!spotEl.firstChild) {
-            spotEl.append('*')
-            spotEl.style.pointerEvents = 'none'
-            spotEl.classList.toggle('resize')
-          }
-        })
-      }
-    },
+  plElement.value.appendChild(plBoardInfoElement.value)
+  pcElement.value.appendChild(pcBoardInfoElement.value)
+}
 
-    updatePlBoard(cord, response) {
-      if (response === true || response.damagedShipData) {
-        const part = this.plBoardElement
-          .querySelector(`.part[data-cord=${JSON.stringify(cord)}]`)
+const updateGameInfo = (msg = '', color = 'rgb(43, 197, 87)') => {
+  gameInfo.value.textContent = msg
+  gameInfo.value.style.color = color
 
-        part.append('x')
-        part.style.backgroundColor = 'rgb(218, 100, 100)'
-        part.classList.toggle('resize')
+  if (!gameInfo.value.classList.contains('pulse')) {
+    gameInfo.value.classList.add('pulse')
+    gameInfo.value.classList.add('top-bot-borders')
+  }
 
-        if (response.damagedShipData) {
-          const { clearedBorders } = response
+  if (!msg) {
+    gameInfo.value.classList.remove('pulse')
+    gameInfo.value.classList.remove('top-bot-borders')
+  }
+}
 
-          clearedBorders.forEach((borderCord) => {
-            const spotEl = this.plBoardElement
-              .querySelector(`.spot[data-cord=${JSON.stringify(JSON.stringify(borderCord))}]`)
+const disablePcBoard = () => {
+  pcBoardElement.value.style.pointerEvents = 'none'
+}
 
-            if (!spotEl.firstChild) {
-              spotEl.append('*')
-              spotEl.classList.toggle('resize')
-            }
-          })
-        }
-      }
-
-      if (response === false) {
-        const spot = this.plBoardElement
-          .querySelector(`.spot[data-cord=${JSON.stringify(cord)}]`)
-
-        spot.append('*')
-        spot.classList.toggle('resize')
-      }
-    },
-
-    updateTheBoardsInfo() {
-      const updateInfoFor = (player, boardInfoElement) => {
-        const nameEl = boardInfoElement.firstElementChild
-        const aliveShipsEl = boardInfoElement.lastElementChild
-        const name = player.getName()
-        const aliveShips = player.getBoard().getAliveShipsCount()
-
-        if (`${nameEl.textContent} Board` !== name) {
-          nameEl.textContent = `${name} Board`
-        }
-
-        if (`Alive Ships: ${aliveShipsEl.textContent}` !== aliveShips) {
-          aliveShipsEl.textContent = `Alive Ships: ${aliveShips}`
-        }
-      }
-
-      updateInfoFor(this.pl, this.plBoardInfoElement)
-      updateInfoFor(this.pc, this.pcBoardInfoElement)
-    },
-
-    renderTheBoardsInfo() {
-      const createBoardInfo = () => {
-        const infoElement = document.createElement('div')
-        const name = document.createElement('h3')
-        const aliveShips = document.createElement('h4')
-
-        infoElement.classList.add('board-info')
-        name.classList.add('name')
-        aliveShips.classList.add('alive-ships')
-
-        infoElement.appendChild(name)
-        infoElement.appendChild(aliveShips)
-
-        return infoElement
-      }
-
-      this.plBoardInfoElement = createBoardInfo()
-      this.pcBoardInfoElement = createBoardInfo()
-
-      this.plElement.appendChild(this.plBoardInfoElement)
-      this.pcElement.appendChild(this.pcBoardInfoElement)
-    },
-
-    updateGameInfo(msg = '', color = 'rgb(43, 197, 87)') {
-      this.gameInfo.textContent = msg
-      this.gameInfo.style.color = color
-
-      if (!this.gameInfo.classList.contains('pulse')) {
-        this.gameInfo.classList.add('pulse')
-        this.gameInfo.classList.add('top-bot-borders')
-      }
-
-      if (!msg) {
-        this.gameInfo.classList.remove('pulse')
-        this.gameInfo.classList.remove('top-bot-borders')
-      }
-    },
-
-    disablePcBoard() {
-      this.pcBoardElement.style.pointerEvents = 'none'
-    },
-
-    enablePcBoard() {
-      this.pcBoardElement.style.pointerEvents = 'auto'
-    },
-  },
+const enablePcBoard = () => {
+  pcBoardElement.value.style.pointerEvents = 'auto'
 }
 </script>
 

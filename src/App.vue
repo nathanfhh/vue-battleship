@@ -5,6 +5,9 @@
       <TheGame
           ref="game"
           @round="handleRound"
+          :showQuestionModal="showQuestionModal"
+          :currentQuestion="currentQuestion"
+          @question-answered="handleQuestionAnswered"
       />
       <TheGameMenu
           :isOpen="isGameMenuOpen"
@@ -13,6 +16,11 @@
           @resume-game="handleResumeGame"
       />
       <TheGameBoardRedactor :isOpen="isGameBoardRedactorOpen" @start-game="handleStartGame"/>
+      <QuestionModal
+          v-if="showQuestionModal"
+          :question="currentQuestion"
+          @answered="handleQuestionAnswered"
+      />
     </v-content>
   </v-app>
 </template>
@@ -23,8 +31,10 @@ import TheNavBar from './components/TheNavBar.vue'
 import TheGameMenu from './components/TheGameMenu.vue'
 import TheGameBoardRedactor from './components/TheGameBoardRedactor.vue'
 import TheGame from './components/TheGame.vue'
+import QuestionModal from './components/QuestionModal.vue'
 
 import createPlayer from './scripts/createPlayer'
+import { getRandomQuestion } from './scripts/questionBank'
 
 const game = ref(null)
 const isGameMenuOpen = ref(true)
@@ -39,6 +49,8 @@ const pc = ref(null)
 const plHasDamaged = ref(false)
 const pcHasDamaged = ref(false)
 const gameHasAwinner = ref(false)
+const showQuestionModal = ref(false)
+const currentQuestion = ref(null)
 
 const hideGameMenu = () => {
   isGameMenuOpen.value = false
@@ -128,10 +140,9 @@ const handleRound = (pcCordAttack) => {
 
 const makePlTurn = (pcCordAttack) => {
   const {x, y} = JSON.parse(pcCordAttack)
-  const attackInfo = pl.value.attack({player: pc.value, x, y})
-  game.value.updatePcBoard(pcCordAttack, attackInfo)
-
-  return attackInfo === true || attackInfo.damagedShipData
+  currentQuestion.value = getRandomQuestion()
+  showQuestionModal.value = true
+  return false
 }
 
 const makePcTurn = () => {
@@ -140,6 +151,18 @@ const makePcTurn = () => {
   game.value.updatePlBoard(JSON.stringify({x, y}), attackInfo)
 
   return attackInfo === true || attackInfo.damagedShipData
+}
+
+const handleQuestionAnswered = (isCorrect) => {
+  showQuestionModal.value = false
+  if (isCorrect) {
+    const {x, y} = JSON.parse(pcCordAttack)
+    const attackInfo = pl.value.attack({player: pc.value, x, y})
+    game.value.updatePcBoard(pcCordAttack, attackInfo)
+    plHasDamaged.value = attackInfo === true || attackInfo.damagedShipData
+  } else {
+    plHasDamaged.value = false
+  }
 }
 </script>
 

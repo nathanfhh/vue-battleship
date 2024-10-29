@@ -24,7 +24,7 @@
   <v-snackbar
       v-model="answerResult"
   >
-    {{ answeredCorrectly ? 'Correct!' : 'Incorrect!' }}
+    {{ snackbarMessage }}
   </v-snackbar>
 </template>
 
@@ -37,9 +37,10 @@ const props = defineProps({
 
 const emit = defineEmits(['answered']);
 const answeredCorrectly = ref(null);
-  const answerResult = ref(false);
+const answerResult = ref(false);
 const dialogVisible = ref(true);
 const selectedAnswer = ref(null);
+const snackbarMessage = ref('');
 
 watch(() => props.question, () => {
   dialogVisible.value = true;
@@ -48,6 +49,8 @@ watch(() => props.question, () => {
 
 const submitAnswer = () => {
   if (!selectedAnswer.value) {
+    snackbarMessage.value = 'Answer cannot be blank!';
+    answerResult.value = true;
     return;
   }
   if (props.question.type === 'true-false') {
@@ -57,6 +60,7 @@ const submitAnswer = () => {
   console.log('selectedAnswer', selectedAnswer.value, props.question.answer);
   answerResult.value = true;
   answeredCorrectly.value = isCorrect;
+  snackbarMessage.value = isCorrect ? 'Correct!' : 'Incorrect!';
   console.log('isCorrect', isCorrect);
   emit('answered', isCorrect);
   dialogVisible.value = false;

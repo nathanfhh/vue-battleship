@@ -22,6 +22,12 @@
           :type="currentQuestion.type"
           @answered="handleQuestionAnswered"
       />
+      <v-snackbar
+          v-model="snackbarVisible"
+          :timeout="snackbarTimeout"
+      >
+        {{ snackbarMessage }}
+      </v-snackbar>
     </v-content>
   </v-app>
 </template>
@@ -54,6 +60,10 @@ const showQuestionModal = ref(false)
 const currentQuestion = ref(null)
 const pcCordAttack = ref(null)
 const answeredQuestions = ref([])
+const roundOngoing = ref(false)
+const snackbarVisible = ref(false)
+const snackbarMessage = ref('')
+const snackbarTimeout = ref(3000)
 
 const hideGameMenu = () => {
   isGameMenuOpen.value = false
@@ -142,10 +152,12 @@ const handleRound = (pcCordAttack) => {
 }
 
 const makePlTurn = (pcCordAttackValue) => {
+  if (roundOngoing.value) return false
   const {x, y} = JSON.parse(pcCordAttackValue)
   pcCordAttack.value = pcCordAttackValue
   currentQuestion.value = getRandomQuestion()
   showQuestionModal.value = true
+  roundOngoing.value = true
   return false
 }
 
@@ -159,14 +171,18 @@ const makePcTurn = () => {
 
 const handleQuestionAnswered = (isCorrect) => {
   showQuestionModal.value = false
+  snackbarMessage.value = isCorrect ? 'Correct!' : 'Incorrect!'
+  snackbarVisible.value = true
   if (isCorrect) {
     const {x, y} = JSON.parse(pcCordAttack.value)
     const attackInfo = pl.value.attack({player: pc.value, x, y})
     game.value.updatePcBoard(pcCordAttack.value, attackInfo)
     plHasDamaged.value = attackInfo === true || attackInfo.damagedShipData
     answeredQuestions.value.push(currentQuestion.value)
+    roundOngoing.value = !(attackInfo === true || attackInfo.damagedShipData)
   } else {
     plHasDamaged.value = false
+    roundOngoing.value = false
   }
 }
 </script>

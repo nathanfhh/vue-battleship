@@ -15,16 +15,22 @@
         <label for="false">False</label>
       </div>
       <div v-else-if="props.question.type === 'codeSnippets'">
-        <pre>{{ props.question.codeSnippet }}</pre>
-        <input type="text" v-model="selectedAnswer" placeholder="Enter your answer">
+        <pre style="font-size: 2.4rem">{{ props.question.codeSnippet }}</pre>
+        <v-text-field
+            style="font-size: 2.4rem;"
+            v-model="selectedAnswer"
+            label="Enter your answer"
+        />
       </div>
-      <button @click="submitAnswer">Submit</button>
+      <v-btn density="default" @click="submitAnswer">Submit</v-btn>
     </div>
   </v-dialog>
   <v-snackbar
+      timeout="15000"
+      location="center"
       v-model="answerResult"
   >
-    {{ snackbarMessage }}
+    <span style="font-size: 2.4rem">{{ snackbarMessage }}</span>
   </v-snackbar>
 </template>
 
@@ -97,5 +103,11 @@ const submitAnswer = () => {
 .container button:hover,
 .container button:focus {
   color: rgb(128, 255, 0);
+}
+
+label {
+  font-size: 2.4rem;
+  text-shadow: 0 2px 2px black;
+  margin-left: 1rem;
 }
 </style>

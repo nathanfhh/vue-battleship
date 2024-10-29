@@ -19,7 +19,6 @@
       <QuestionModal
           v-if="showQuestionModal"
           :question="currentQuestion"
-          :type="currentQuestion.type"
           @answered="handleQuestionAnswered"
       />
       <v-snackbar
@@ -230,4 +229,5 @@ html {
     font-size: 4px !important;
   }
 }
+
 </style>

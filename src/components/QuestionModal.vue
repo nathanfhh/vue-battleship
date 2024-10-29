@@ -14,6 +14,10 @@
         <input type="radio" id="false" value="false" v-model="selectedAnswer">
         <label for="false">False</label>
       </div>
+      <div v-else-if="question.type === 'codeSnippets'">
+        <pre>{{ question.codeSnippet }}</pre>
+        <input type="text" v-model="selectedAnswer" placeholder="Enter your answer">
+      </div>
       <button @click="submitAnswer">Submit</button>
     </div>
   </v-dialog>

@@ -11,7 +11,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import {ref} from 'vue'
 
 const isGameInitiated = ref(false)
 const plElement = ref(null)
@@ -23,15 +23,16 @@ const pcBoardInfoElement = ref(null)
 const gameInfo = ref(null)
 const pl = ref(null)
 const pc = ref(null)
+const emit = defineEmits(['round'])
 
-const initTheGame = (plBoardElement, pcBoardElement, pl, pc) => {
+const initTheGame = (plBoardEle, pcBoardEle, humanPlayer, computerPlayer) => {
   plElement.value = document.querySelector('.pl')
   pcElement.value = document.querySelector('.pc')
   gameInfo.value = document.querySelector('.game-info')
-  plBoardElement.value = plBoardElement
-  pcBoardElement.value = pcBoardElement
-  pl.value = pl
-  pc.value = pc
+  plBoardElement.value = plBoardEle
+  pcBoardElement.value = pcBoardEle
+  pl.value = humanPlayer
+  pc.value = computerPlayer
 
   renderTheBoards()
   renderTheBoardsInfo()
@@ -68,7 +69,7 @@ const addPcBoardEvent = () => {
 const updatePcBoard = (cord, response) => {
   if (response === true) {
     const spot = pcBoardElement.value
-      .querySelector(`.spot[data-cord=${JSON.stringify(cord)}]`)
+        .querySelector(`.spot[data-cord=${JSON.stringify(cord)}]`)
 
     spot.append('x')
     spot.style.backgroundColor = 'rgb(248, 39, 39)'
@@ -79,7 +80,7 @@ const updatePcBoard = (cord, response) => {
 
   if (response === false) {
     const spot = pcBoardElement.value
-      .querySelector(`.spot[data-cord=${JSON.stringify(cord)}]`)
+        .querySelector(`.spot[data-cord=${JSON.stringify(cord)}]`)
 
     spot.append('*')
     spot.style.pointerEvents = 'none'
@@ -87,7 +88,7 @@ const updatePcBoard = (cord, response) => {
   }
 
   if (response.damagedShipData) {
-    const { damagedShipData, clearedBorders } = response
+    const {damagedShipData, clearedBorders} = response
     const ship = document.createElement('div')
     ship.classList.add('ship')
 
@@ -101,7 +102,7 @@ const updatePcBoard = (cord, response) => {
     ship.classList.toggle('resize')
 
     const firstSpot = pcBoardElement.value
-      .querySelector(`.spot[data-cord=${JSON.stringify(JSON.stringify(damagedShipData.cords[0]))}]`)
+        .querySelector(`.spot[data-cord=${JSON.stringify(JSON.stringify(damagedShipData.coordinates[0]))}]`)
 
     ship.style['grid-auto-flow'] = damagedShipData.isVertical ? 'row' : 'column'
     ship.style.position = 'absolute'
@@ -111,7 +112,7 @@ const updatePcBoard = (cord, response) => {
 
     clearedBorders.forEach((borderCord) => {
       const spotEl = pcBoardElement.value
-        .querySelector(`.spot[data-cord=${JSON.stringify(JSON.stringify(borderCord))}]`)
+          .querySelector(`.spot[data-cord=${JSON.stringify(JSON.stringify(borderCord))}]`)
 
       if (!spotEl.firstChild) {
         spotEl.append('*')
@@ -125,18 +126,18 @@ const updatePcBoard = (cord, response) => {
 const updatePlBoard = (cord, response) => {
   if (response === true || response.damagedShipData) {
     const part = plBoardElement.value
-      .querySelector(`.part[data-cord=${JSON.stringify(cord)}]`)
+        .querySelector(`.part[data-cord=${JSON.stringify(cord)}]`)
 
     part.append('x')
     part.style.backgroundColor = 'rgb(218, 100, 100)'
     part.classList.toggle('resize')
 
     if (response.damagedShipData) {
-      const { clearedBorders } = response
+      const {clearedBorders} = response
 
       clearedBorders.forEach((borderCord) => {
         const spotEl = plBoardElement.value
-          .querySelector(`.spot[data-cord=${JSON.stringify(JSON.stringify(borderCord))}]`)
+            .querySelector(`.spot[data-cord=${JSON.stringify(JSON.stringify(borderCord))}]`)
 
         if (!spotEl.firstChild) {
           spotEl.append('*')
@@ -148,7 +149,7 @@ const updatePlBoard = (cord, response) => {
 
   if (response === false) {
     const spot = plBoardElement.value
-      .querySelector(`.spot[data-cord=${JSON.stringify(cord)}]`)
+        .querySelector(`.spot[data-cord=${JSON.stringify(cord)}]`)
 
     spot.append('*')
     spot.classList.toggle('resize')
@@ -220,6 +221,18 @@ const disablePcBoard = () => {
 const enablePcBoard = () => {
   pcBoardElement.value.style.pointerEvents = 'auto'
 }
+
+defineExpose({
+  initTheGame,
+  resetTheGame,
+  updatePcBoard,
+  updatePlBoard,
+  disablePcBoard,
+  enablePcBoard,
+  updateTheBoardsInfo,
+  updateGameInfo
+})
+
 </script>
 
 <style scoped>
@@ -237,7 +250,7 @@ const enablePcBoard = () => {
 }
 
 .pl >>> .ship,
-.pc >>> .ship  {
+.pc >>> .ship {
   cursor: initial;
 }
 
@@ -271,12 +284,12 @@ const enablePcBoard = () => {
   border: 4px solid rgb(70, 70, 70);
 }
 
-.pc >>> .spot .part ,
+.pc >>> .spot .part,
 .pl >>> .spot .part {
   text-shadow: 0 0 2px black;
   text-align: center;
   font-size: var(--spot-size);
-  line-height : 0.745;
+  line-height: 0.745;
 }
 
 .pc >>> .board-info,
@@ -330,9 +343,9 @@ const enablePcBoard = () => {
 }
 
 @keyframes pulse {
-   100% {
+  100% {
     box-shadow: inset 0 0 2px 1px rgb(82, 82, 82),
-      0 0 2px 1px rgb(255, 255, 255);
+    0 0 2px 1px rgb(255, 255, 255);
     color: rgb(255, 255, 255);
   }
 }
@@ -381,9 +394,9 @@ const enablePcBoard = () => {
     grid-gap: 2px;
   }
 
-  .pc >>> .spot .part ,
+  .pc >>> .spot .part,
   .pl >>> .spot .part {
-    line-height : 0.7;
+    line-height: 0.7;
   }
 
   .game-info {
@@ -413,9 +426,9 @@ const enablePcBoard = () => {
     border-width: 1px;
   }
 
-  .pc >>> .spot .part ,
+  .pc >>> .spot .part,
   .pl >>> .spot .part {
-    line-height : 0.9;
+    line-height: 0.9;
   }
 }
 </style>

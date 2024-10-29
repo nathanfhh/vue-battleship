@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="resetAndDisplay" persistent overlay-opacity="0.8">
+  <v-dialog v-model="dialogVisible" persistent overlay-opacity="0.8">
     <div class="container">
       <h2>Arrange your board</h2>
       <div class="redactor">
@@ -12,30 +12,30 @@
           </div>
           <div class="board">
             <div
-              class="spot"
-              v-for="(_, i) in Math.pow(MAX + 1, 2)"
-              :key="keys[MIN + i]"
-              :data-cord="stringifiedCords[MIN + i]"
-              @dragover.prevent="handleDragOver"
-              @dragleave="handleDragLeave"
-              @drop.prevent="handleDrop"
+                class="spot"
+                v-for="(_, i) in Math.pow(MAX + 1, 2)"
+                :key="keys[i]"
+                :data-cord="stringifiedCords[i]"
+                @dragover.prevent="handleDragOver"
+                @dragleave="handleDragLeave"
+                @drop.prevent="handleDrop"
             ></div>
           </div>
         </div>
         <div class="selection">
           <div
-            class="ship-container"
-            v-for="(count, ship) in ships"
-            :key="ship"
-            @dragstart="handleDragStart"
+              class="ship-container"
+              v-for="(count, ship) in ships"
+              :key="ship"
+              @dragstart="handleDragStart"
           >
             <span class="count">{{ count }}x</span>
             <div
-              class="ship"
-              :data-length="getShipLength(ship)"
-              data-position="y"
-              draggable="true"
-             :ref="ship"
+                class="ship"
+                :data-length="getShipLength(ship)"
+                data-position="y"
+                draggable="true"
+                :ref="el => (shipRefs[ship] = el)"
             >
               <div class="part" v-for="i in getShipLength(ship)" :key="i"></div>
             </div>
@@ -51,262 +51,252 @@
       </div>
       <div class="options">
         <button @click="handleRandomPlacement">Random</button>
-        <button @click="resetBoard()">Reset</button>
-        <button @click="onClickStartBtn"  :class="{ disable: totalShips !== 0 }">Start</button>
+        <button @click="resetBoard">Reset</button>
+        <button @click="onClickStartBtn" :class="{ disable: totalShips !== 0 }">Start</button>
       </div>
     </div>
   </v-dialog>
 </template>
 
-<script>
+<script setup>
+import {ref, reactive, computed, watch} from 'vue';
 import createGameBoard, {
   MAX_CORD_RANGE,
   MIN_CORD_RANGE,
   REQUIRED_TYPES_OF_SHIPS,
-} from '../scripts/createGameBoard'
+} from '../scripts/createGameBoard';
+import createShip from '../scripts/createShip';
 
-import createShip from '../scripts/createShip'
+const props = defineProps({
+  isOpen: Boolean,
+});
 
-export default {
-  name: 'TheGameBoardRedactor',
+const emit = defineEmits(['start-game', 'update:isOpen']);
 
-  props: {
-    isOpen: Boolean,
-  },
+const MAX = MAX_CORD_RANGE;
+const MIN = MIN_CORD_RANGE;
 
-  data() {
-    return {
-      MAX: MAX_CORD_RANGE,
-      MIN: MIN_CORD_RANGE,
-      ships: { ...REQUIRED_TYPES_OF_SHIPS },
-      board: createGameBoard(),
-      draggedShip: null,
+const ships = reactive({...REQUIRED_TYPES_OF_SHIPS});
+const board = ref(createGameBoard());
+const draggedShip = ref(null);
+const shipRefs = reactive({});
+
+const dialogVisible = ref(props.isOpen);
+
+watch(
+    () => props.isOpen,
+    (newVal) => {
+      dialogVisible.value = newVal;
+      if (newVal) {
+        resetBoard();
+      }
+    },
+    {immediate: true}
+);
+
+watch(
+    () => dialogVisible.value,
+    (newVal) => {
+      if (newVal !== props.isOpen) {
+        emit('update:isOpen', newVal);
+      }
     }
-  },
+);
 
-  computed: {
-    resetAndDisplay() {
-      if (this.isOpen) this.resetBoard()
+const cords = computed(() => {
+  const cordsArray = [];
+  for (let i = MIN; i <= MAX; i += 1) {
+    for (let j = MIN; j <= MAX; j += 1) {
+      cordsArray.push({x: j, y: i});
+    }
+  }
+  return cordsArray;
+});
 
-      return this.isOpen
-    },
+const keys = computed(() => cords.value.map((c, i) => `${JSON.stringify(c)}-${i}`));
 
-    cords() {
-      const cords = []
-      for (let i = this.MIN; i <= this.MAX; i += 1) {
-        for (let j = this.MIN; j <= this.MAX; j += 1) {
-          cords.push({ x: j, y: i })
-        }
+const stringifiedCords = computed(() => cords.value.map((c) => JSON.stringify(c)));
+
+const lettersCords = computed(() => {
+  const cordsArray = [];
+  for (let i = MIN; i <= MAX; i += 1) {
+    cordsArray.push(String.fromCharCode(65 + i));
+  }
+  return cordsArray;
+});
+
+const numbersCords = computed(() => {
+  const cordsArray = [];
+  for (let i = MIN + 1; i <= MAX + 1; i += 1) {
+    cordsArray.push(i);
+  }
+  return cordsArray;
+});
+
+const totalShips = computed(() => {
+  return Object.values(ships).reduce((prev, cur) => prev + cur, 0);
+});
+
+function getShipLength(ship) {
+  return Number(ship.match(/\d+/)[0]);
+}
+
+function resetBoard() {
+  document.querySelectorAll('.spot > .ship').forEach((ship) => ship.remove());
+  board.value = createGameBoard();
+  Object.assign(ships, {...REQUIRED_TYPES_OF_SHIPS});
+}
+
+function onClickStartBtn() {
+  const plBoardElement = document.querySelector('.board-container').cloneNode(true);
+  const shipsEls = plBoardElement.querySelectorAll('.ship');
+  console.log("plBoardElement", plBoardElement, typeof plBoardElement);
+  shipsEls.forEach((ship) => {
+    ship.removeAttribute('draggable');
+    const isVertical = ship.dataset.position === 'x';
+    const {x, y} = JSON.parse(ship.parentElement.dataset.cord);
+
+    ship.querySelectorAll('.part').forEach((part, i) => {
+      const curCord = isVertical ? {x, y: y + i} : {x: x + i, y};
+      part.dataset.cord = JSON.stringify(curCord);
+    });
+  });
+
+  board.value.setBoardToReady();
+  const plBoard = {...board.value};
+
+  resetBoard();
+  const pcBoardElement = document.querySelector('.board-container').cloneNode(true);
+
+  [4, 3, 3, 2, 2, 2, 1, 1, 1, 1].forEach((length) => {
+    board.value.placeShipRandom(createShip({length}));
+  });
+
+  board.value.setBoardToReady();
+  const pcBoard = {...board.value};
+  emit('start-game', plBoard, plBoardElement, pcBoard, pcBoardElement);
+}
+
+function handleChangePosition(e) {
+  const ship = e.currentTarget;
+  const cord = JSON.parse(ship.dataset.cord);
+  const isVertical = ship.dataset.position === 'x';
+
+  if (
+      board.value.replaceShipFrom(
+          {cx: cord.x, cy: cord.y},
+          {nx: cord.x, ny: cord.y, isVertical: !isVertical}
+      )
+  ) {
+    const pos = ship.dataset.position === 'x' ? 'y' : 'x';
+    ship.dataset.position = pos;
+    ship.style['grid-auto-flow'] = pos === 'x' ? 'row' : 'column';
+  }
+}
+
+function handleShipInitialCord(e) {
+  const cord = JSON.parse(e.currentTarget.dataset.cord);
+  const {position} = e.currentTarget.dataset;
+  e.dataTransfer.setData('text/plain', JSON.stringify({cord, cloned: true, position}));
+  draggedShip.value = e.currentTarget;
+}
+
+function handleDragStart(e) {
+  const {position} = e.target.dataset;
+  const length = +e.target.dataset.length;
+  e.dataTransfer.setData('text/plain', JSON.stringify({length, position}));
+}
+
+function handleDragOver(e) {
+  e.target.classList.add('over');
+}
+
+function handleDragLeave(e) {
+  e.target.classList.remove('over');
+}
+
+function handleDrop(e) {
+  e.target.classList.remove('over');
+
+  let isDataValid;
+  let data;
+
+  try {
+    data = JSON.parse(e.dataTransfer.getData('text/plain'));
+    JSON.parse(e.target.dataset.cord);
+    isDataValid = true;
+  } catch {
+    isDataValid = false;
+  }
+
+  if (isDataValid && data) {
+    if (data.cloned) {
+      const newCord = JSON.parse(e.target.dataset.cord);
+      const {cord, position} = data;
+      const isVertical = position === 'x';
+
+      if (
+          board.value.replaceShipFrom(
+              {cx: cord.x, cy: cord.y},
+              {nx: newCord.x, ny: newCord.y, isVertical}
+          )
+      ) {
+        draggedShip.value.dataset.cord = e.target.dataset.cord;
+        e.target.appendChild(draggedShip.value);
+        draggedShip.value = null;
       }
+    } else {
+      const {length, position} = data;
+      const cord = JSON.parse(e.target.dataset.cord);
+      const isVertical = position === 'x';
 
-      return cords
-    },
+      if (board.value.placeShipAt(createShip({length}), {...cord, isVertical})) {
+        const shipType = `ship${length}`;
+        const ship = shipRefs[shipType].cloneNode(true);
 
-    keys() {
-      return this.cords.map((c, i) => `${JSON.stringify(c)}-${i}`)
-    },
+        ship.dataset.cord = e.target.dataset.cord;
+        ship.dataset.position = position;
 
-    stringifiedCords() {
-      return this.cords.map((c) => JSON.stringify(c))
-    },
+        ships[shipType] -= 1;
 
-    lettersCords() {
-      const cords = []
+        ship.style.position = 'absolute';
+        e.target.appendChild(ship);
 
-      for (let i = this.MIN; i <= this.MAX; i += 1) {
-        cords.push(String.fromCharCode(65 + i))
+        ship.addEventListener('dragstart', handleShipInitialCord);
+        ship.addEventListener('click', handleChangePosition);
       }
+    }
+  }
+}
 
-      return cords
-    },
+function handleRandomPlacement() {
+  function renderNewShip({x, y, isVertical}, length) {
+    const shipType = `ship${length}`;
+    const ship = shipRefs[shipType].cloneNode(true);
 
-    numbersCords() {
-      const cords = []
+    ship.dataset.cord = JSON.stringify({x, y});
+    ship.dataset.position = isVertical ? 'x' : 'y';
 
-      for (let i = this.MIN + 1; i <= this.MAX + 1; i += 1) {
-        cords.push(i)
-      }
+    ships[shipType] -= 1;
+    ship.style.position = 'absolute';
+    ship.style['grid-auto-flow'] = isVertical ? 'row' : 'column';
 
-      return cords
-    },
+    const spot = [...document.querySelectorAll('.spot')].find(
+        (spot) => spot.dataset.cord === JSON.stringify({x, y})
+    );
 
-    totalShips() {
-      return Object.entries(this.ships).reduce((prev, cur) => prev + cur[1], 0)
-    },
-  },
+    spot.appendChild(ship);
 
-  methods: {
-    onClickStartBtn() {
-      const plBoardElement = document.querySelector('.board-container').cloneNode(true)
-      const ships = plBoardElement.querySelectorAll('.ship')
+    ship.addEventListener('dragstart', handleShipInitialCord);
+    ship.addEventListener('click', handleChangePosition);
+  }
 
-      // adds cords for each part of the ships
-      ships.forEach((ship) => {
-        ship.removeAttribute('draggable')
-        const isVertical = ship.dataset.position === 'x'
-        const { x, y } = JSON.parse(ship.parentElement.dataset.cord)
+  resetBoard();
 
-        /* eslint-disable no-param-reassign */
-        ship.querySelectorAll('.part').forEach((part, i) => {
-          const curCord = isVertical ? { x, y: y + i } : { x: x + i, y }
-          part.dataset.cord = JSON.stringify(curCord)
-        })
-      })
-
-      this.board.setBoardToReady()
-      const plBoard = { ...this.board }
-
-      this.resetBoard()
-      const pcBoardElement = document.querySelector('.board-container').cloneNode(true)
-
-      this.board.placeShipRandom(createShip({ length: 4 }))
-      this.board.placeShipRandom(createShip({ length: 3 }))
-      this.board.placeShipRandom(createShip({ length: 3 }))
-      this.board.placeShipRandom(createShip({ length: 2 }))
-      this.board.placeShipRandom(createShip({ length: 2 }))
-      this.board.placeShipRandom(createShip({ length: 2 }))
-      this.board.placeShipRandom(createShip({ length: 1 }))
-      this.board.placeShipRandom(createShip({ length: 1 }))
-      this.board.placeShipRandom(createShip({ length: 1 }))
-      this.board.placeShipRandom(createShip({ length: 1 }))
-
-      this.board.setBoardToReady()
-      const pcBoard = { ...this.board }
-      this.$emit('start-game', plBoard, plBoardElement, pcBoard, pcBoardElement)
-    },
-
-    getShipLength(ship) {
-      return +ship.match(/\d/g).join('')
-    },
-
-    resetBoard() {
-      document.querySelectorAll('.spot > .ship').forEach((ship) => ship.remove())
-      this.board = createGameBoard()
-      this.ships = { ...REQUIRED_TYPES_OF_SHIPS }
-    },
-
-    handleChangePosition(e) {
-      const ship = e.currentTarget
-      const cord = JSON.parse(ship.dataset.cord)
-      const isVertical = ship.dataset.position === 'x'
-
-      if (this.board.replaceShipFrom(
-        { cx: cord.x, cy: cord.y },
-        { nx: cord.x, ny: cord.y, isVertical: !isVertical },
-      )) {
-        const pos = ship.dataset.position === 'x' ? 'y' : 'x'
-        ship.dataset.position = pos
-        ship.style['grid-auto-flow'] = pos === 'x' ? 'row' : 'column'
-      }
-    },
-
-    handleShipInitialCord(e) {
-      const cord = JSON.parse(e.currentTarget.dataset.cord)
-      const { position } = e.currentTarget.dataset
-      e.dataTransfer.setData('text/plain', JSON.stringify({ cord, cloned: true, position }))
-      this.draggedShip = e.currentTarget
-    },
-
-    handleDragStart(e) {
-      const { position } = e.target.dataset
-      const length = +e.target.dataset.length
-      e.dataTransfer.setData('text/plain', JSON.stringify({ length, position }))
-    },
-
-    handleDragOver(e) {
-      e.target.classList.add('over')
-    },
-
-    handleDragLeave(e) {
-      e.target.classList.remove('over')
-    },
-
-    handleDrop(e) {
-      e.target.classList.remove('over')
-
-      let isDataValid
-      let data
-
-      try {
-        data = JSON.parse(e.dataTransfer.getData('text/plain'))
-        JSON.parse(e.target.dataset.cord)
-        isDataValid = true
-      } catch {
-        isDataValid = false
-      }
-
-      if (isDataValid && data) {
-        if (data.cloned) {
-          const newCord = JSON.parse(e.target.dataset.cord)
-          const { cord, position } = data
-          const isVertical = position === 'x'
-
-          if (this.board.replaceShipFrom(
-            { cx: cord.x, cy: cord.y },
-            { nx: newCord.x, ny: newCord.y, isVertical },
-          )) {
-            this.draggedShip.dataset.cord = e.target.dataset.cord
-            e.target.appendChild(this.draggedShip)
-            this.draggedShip = null
-          }
-        } else {
-          const { length, position } = data
-          const cord = JSON.parse(e.target.dataset.cord)
-          const isVertical = position === 'x'
-
-          if (this.board.placeShipAt(createShip({ length }), { ...cord, isVertical })) {
-            const shipType = `ship${length}`
-            const ship = this.$refs[shipType][0].cloneNode(true)
-
-            ship.dataset.cord = e.target.dataset.cord
-            ship.dataset.position = position
-
-            this.ships[shipType] -= 1
-
-            ship.style.position = 'absolute'
-            e.target.appendChild(ship)
-
-            ship.addEventListener('dragstart', this.handleShipInitialCord)
-            ship.addEventListener('click', this.handleChangePosition)
-          }
-        }
-      }
-    },
-
-    handleRandomPlacement() {
-      const renderNewShip = ({ x, y, isVertical }, length) => {
-        const shipType = `ship${length}`
-        const ship = this.$refs[shipType][0].cloneNode(true)
-
-        ship.dataset.cord = JSON.stringify({ x, y })
-        ship.dataset.position = isVertical ? 'x' : 'y'
-
-        this.ships[shipType] -= 1
-        ship.style.position = 'absolute'
-        ship.style['grid-auto-flow'] = isVertical ? 'row' : 'column';
-
-        [...document.querySelectorAll('.spot')].find((spot) => (
-          spot.dataset.cord === JSON.stringify({ x, y })
-        )).appendChild(ship)
-
-        ship.addEventListener('dragstart', this.handleShipInitialCord)
-        ship.addEventListener('click', this.handleChangePosition)
-      }
-
-      this.resetBoard()
-
-      renderNewShip({ ...this.board.placeShipRandom(createShip({ length: 4 })) }, 4)
-      renderNewShip({ ...this.board.placeShipRandom(createShip({ length: 3 })) }, 3)
-      renderNewShip({ ...this.board.placeShipRandom(createShip({ length: 3 })) }, 3)
-      renderNewShip({ ...this.board.placeShipRandom(createShip({ length: 2 })) }, 2)
-      renderNewShip({ ...this.board.placeShipRandom(createShip({ length: 2 })) }, 2)
-      renderNewShip({ ...this.board.placeShipRandom(createShip({ length: 2 })) }, 2)
-      renderNewShip({ ...this.board.placeShipRandom(createShip({ length: 1 })) }, 1)
-      renderNewShip({ ...this.board.placeShipRandom(createShip({ length: 1 })) }, 1)
-      renderNewShip({ ...this.board.placeShipRandom(createShip({ length: 1 })) }, 1)
-      renderNewShip({ ...this.board.placeShipRandom(createShip({ length: 1 })) }, 1)
-    },
-  },
+  [4, 3, 3, 2, 2, 2, 1, 1, 1, 1].forEach((length) => {
+    const shipPlacement = board.value.placeShipRandom(createShip({length}));
+    renderNewShip(shipPlacement, length);
+  });
 }
 </script>
 
@@ -425,7 +415,7 @@ export default {
     transform: scale(1.2);
     color: rgb(200, 48, 48);
     box-shadow: inset 0 0 10px 2px rgb(255, 255, 0),
-      0 0 10px 2px rgb(255, 255, 0);
+    0 0 10px 2px rgb(255, 255, 0);
   }
 }
 
@@ -468,7 +458,8 @@ export default {
 }
 
 @media screen and (max-width: 860px) {
-  .board, .ship {
+  .board,
+  .ship {
     grid-gap: 2px;
   }
 
@@ -498,7 +489,8 @@ export default {
 }
 
 @media screen and (max-width: 360px) {
-  .board, .ship {
+  .board,
+  .ship {
     grid-gap: 1px;
   }
 

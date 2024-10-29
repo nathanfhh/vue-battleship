@@ -20,12 +20,13 @@
 </template>
 
 <script setup>
-import { defineProps } from 'vue'
+import {computed, defineProps} from 'vue'
 
 const props = defineProps({
   isOpen: Boolean,
   options: Object,
 })
+const isOpen = computed(() => props.isOpen)
 
 const handleOpenRepo = () => {
   window.open('https://github.com/JoshAubrey/vue-battleship', '_blank')

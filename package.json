@@ -3,24 +3,30 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "serve": "vite",
+    "dev": "vite",
     "build": "vite build",
     "test:unit": "vite test",
-    "lint": "eslint . --ext .js,.vue"
+    "preview": "vite preview",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
+    "format": "prettier --write src/"
   },
   "dependencies": {
-    "core-js": "^3.6.5",
+    "core-js": "^3.38.1",
     "vue": "^3.5.12",
-    "vuetify": "^3.0.0",
-    "pinia": "^2.0.0"
+    "vuetify": "^3.7.3",
+    "pinia": "^2.2.4"
   },
   "devDependencies": {
-    "vite": "^2.6.4",
-    "@vitejs/plugin-vue": "^1.9.3",
-    "eslint": "^7.32.0",
-    "eslint-plugin-vue": "^7.20.0",
-    "sass": "^1.19.0",
-    "sass-loader": "^8.0.0",
-    "vite-plugin-vuetify": "^1.0.0"
+    "@rushstack/eslint-patch": "^1.10.4",
+    "@vitejs/plugin-vue": "^5.1.4",
+    "@vue/eslint-config-prettier": "^10.1.0",
+    "eslint": "^9.13.0",
+    "eslint-plugin-vue": "^9.30.0",
+    "prettier": "^3.3.3",
+    "vite": "^5.4.10",
+    "vite-plugin-vue-devtools": "^7.5.4",
+    "vite": "^5.4.10",
+    "vite-plugin-vue-devtools": "^7.5.4",
+    "vite-plugin-vuetify": "^2.0.4"
   }
 }

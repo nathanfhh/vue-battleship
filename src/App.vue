@@ -1,16 +1,16 @@
 <template>
   <v-app>
-    <TheNavBar @show-game-menu="handleShowGameMenu" />
+    <TheNavBar @show-game-menu="handleShowGameMenu"/>
     <v-content>
       <TheGame
-        ref="game"
-        @round="handleRound"
+          ref="game"
+          @round="handleRound"
       />
       <TheGameMenu
-        :isOpen="isGameMenuOpen"
-        :options="gameMenuOptions"
-        @start-new-game="handleNewGame"
-        @resume-game="handleResumeGame"
+          :isOpen="isGameMenuOpen"
+          :options="gameMenuOptions"
+          @start-new-game="handleNewGame"
+          @resume-game="handleResumeGame"
       />
       <TheGameBoardRedactor :isOpen="isGameBoardRedactorOpen" @start-game="handleStartGame"/>
     </v-content>
@@ -18,7 +18,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import {ref} from 'vue'
 import TheNavBar from './components/TheNavBar.vue'
 import TheGameMenu from './components/TheGameMenu.vue'
 import TheGameBoardRedactor from './components/TheGameBoardRedactor.vue'
@@ -26,6 +26,7 @@ import TheGame from './components/TheGame.vue'
 
 import createPlayer from './scripts/createPlayer'
 
+const game = ref(null)
 const isGameMenuOpen = ref(true)
 const isGameBoardRedactorOpen = ref(false)
 const gameMenuOptions = ref({
@@ -71,8 +72,8 @@ const handleResumeGame = () => {
 const handleStartGame = (plBoard, plBoardElement, pcBoard, pcBoardElement) => {
   closeGameBoardRedactor()
 
-  pl.value = createPlayer({ board: plBoard })
-  pc.value = createPlayer({ board: pcBoard, isPc: true })
+  pl.value = createPlayer({board: plBoard})
+  pc.value = createPlayer({board: pcBoard, isPc: true})
 
   game.value.initTheGame(plBoardElement, pcBoardElement, pl.value, pc.value)
 }
@@ -126,17 +127,17 @@ const handleRound = (pcCordAttack) => {
 }
 
 const makePlTurn = (pcCordAttack) => {
-  const { x, y } = JSON.parse(pcCordAttack)
-  const attackInfo = pl.value.attack({ player: pc.value, x, y })
+  const {x, y} = JSON.parse(pcCordAttack)
+  const attackInfo = pl.value.attack({player: pc.value, x, y})
   game.value.updatePcBoard(pcCordAttack, attackInfo)
 
   return attackInfo === true || attackInfo.damagedShipData
 }
 
 const makePcTurn = () => {
-  const { attackInfo, cord } = pc.value.attack({ player: pl.value })
-  const { x, y } = cord
-  game.value.updatePlBoard(JSON.stringify({ x, y }), attackInfo)
+  const {attackInfo, cord} = pc.value.attack({player: pl.value})
+  const {x, y} = cord
+  game.value.updatePlBoard(JSON.stringify({x, y}), attackInfo)
 
   return attackInfo === true || attackInfo.damagedShipData
 }

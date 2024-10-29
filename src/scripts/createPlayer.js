@@ -1,4 +1,5 @@
 import { getRandomCoordinate, isCoordinatesValid } from './createGameBoard'
+import { getRandomQuestion } from './questionBank'
 
 const getValidName = (name, isPc) => {
   if (!name && !isPc) {
@@ -169,6 +170,13 @@ const pcAttack = ({ player }) => {
   return { attackInfo, cord: { x, y } }
 }
 
+const answerQuestion = () => {
+  const question = getRandomQuestion()
+  const correctness = localStorage.getItem('pcCorrectness') || 0.6
+  const isCorrect = Math.random() < correctness
+  return { question, isCorrect }
+}
+
 const createPlayer = ({ name = '', board, isPc = false } = {}) => {
   if (!board) throw new Error('Player must have a board')
   if (!board.isReady()) throw new Error('Player must have a board with ships')
@@ -182,6 +190,7 @@ const createPlayer = ({ name = '', board, isPc = false } = {}) => {
     getBoard: () => ({ ...board }),
     attack,
     receiveAttack,
+    answerQuestion,
   }
 }
 

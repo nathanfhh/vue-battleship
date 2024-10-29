@@ -7,11 +7,17 @@
       <div class="pc">
       </div>
     </div>
+    <QuestionModal
+      v-if="showQuestionModal"
+      :question="currentQuestion"
+      @answered="handleQuestionAnswered"
+    />
   </div>
 </template>
 
 <script setup>
-import {ref} from 'vue'
+import { ref, watch } from 'vue'
+import QuestionModal from './QuestionModal.vue'
 
 const isGameInitiated = ref(false)
 const plElement = ref(null)
@@ -24,6 +30,9 @@ const gameInfo = ref(null)
 const pl = ref(null)
 const pc = ref(null)
 const emit = defineEmits(['round'])
+const showQuestionModal = ref(false)
+const currentQuestion = ref(null)
+const pcCordAttack = ref(null)
 
 const initTheGame = (plBoardEle, pcBoardEle, humanPlayer, computerPlayer) => {
   plElement.value = document.querySelector('.pl')
@@ -222,6 +231,25 @@ const enablePcBoard = () => {
   pcBoardElement.value.style.pointerEvents = 'auto'
 }
 
+const makePlTurn = (pcCordAttack) => {
+  const {x, y} = JSON.parse(pcCordAttack)
+  currentQuestion.value = getRandomQuestion()
+  showQuestionModal.value = true
+  return false
+}
+
+const handleQuestionAnswered = (isCorrect) => {
+  showQuestionModal.value = false
+  if (isCorrect) {
+    const {x, y} = JSON.parse(pcCordAttack)
+    const attackInfo = pl.value.attack({player: pc.value, x, y})
+    updatePcBoard(pcCordAttack, attackInfo)
+    return attackInfo === true || attackInfo.damagedShipData
+  } else {
+    return false
+  }
+}
+
 defineExpose({
   initTheGame,
   resetTheGame,
@@ -230,7 +258,9 @@ defineExpose({
   disablePcBoard,
   enablePcBoard,
   updateTheBoardsInfo,
-  updateGameInfo
+  updateGameInfo,
+  makePlTurn,
+  handleQuestionAnswered
 })
 
 </script>

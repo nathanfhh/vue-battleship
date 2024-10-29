@@ -141,8 +141,9 @@ const handleRound = (pcCordAttack) => {
   }
 }
 
-const makePlTurn = (pcCordAttack) => {
-  const {x, y} = JSON.parse(pcCordAttack)
+const makePlTurn = (pcCordAttackValue) => {
+  const {x, y} = JSON.parse(pcCordAttackValue)
+  pcCordAttack.value = pcCordAttackValue
   currentQuestion.value = getRandomQuestion()
   showQuestionModal.value = true
   return false
@@ -159,9 +160,9 @@ const makePcTurn = () => {
 const handleQuestionAnswered = (isCorrect) => {
   showQuestionModal.value = false
   if (isCorrect) {
-    const {x, y} = JSON.parse(pcCordAttack)
+    const {x, y} = JSON.parse(pcCordAttack.value)
     const attackInfo = pl.value.attack({player: pc.value, x, y})
-    game.value.updatePcBoard(pcCordAttack, attackInfo)
+    game.value.updatePcBoard(pcCordAttack.value, attackInfo)
     plHasDamaged.value = attackInfo === true || attackInfo.damagedShipData
     answeredQuestions.value.push(currentQuestion.value)
   } else {

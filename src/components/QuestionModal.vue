@@ -1,37 +1,43 @@
 <template>
   <v-dialog v-model="dialogVisible" persistent overlay-opacity="0.8">
     <div class="container">
-      <h2>{{ question.text }}</h2>
-      <div v-if="question.type === 'multiple-choice'">
-        <div v-for="(option, index) in question.options" :key="index">
+      <h2>{{ props.question.question }}</h2>
+      <div v-if="props.question.type === 'multiple-choice'">
+        <div v-for="(option, index) in props.question.options" :key="index">
           <input type="radio" :id="'option' + index" :value="option" v-model="selectedAnswer">
           <label :for="'option' + index">{{ option }}</label>
         </div>
       </div>
-      <div v-else-if="question.type === 'true-false'">
+      <div v-else-if="props.question.type === 'true-false'">
         <input type="radio" id="true" value="true" v-model="selectedAnswer">
         <label for="true">True</label>
         <input type="radio" id="false" value="false" v-model="selectedAnswer">
         <label for="false">False</label>
       </div>
-      <div v-else-if="question.type === 'codeSnippets'">
-        <pre>{{ question.codeSnippet }}</pre>
+      <div v-else-if="props.question.type === 'codeSnippets'">
+        <pre>{{ props.question.codeSnippet }}</pre>
         <input type="text" v-model="selectedAnswer" placeholder="Enter your answer">
       </div>
       <button @click="submitAnswer">Submit</button>
     </div>
   </v-dialog>
+  <v-snackbar
+      v-model="answerResult"
+  >
+    {{ answeredCorrectly ? 'Correct!' : 'Incorrect!' }}
+  </v-snackbar>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import {ref, watch} from 'vue';
 
 const props = defineProps({
   question: Object,
 });
 
 const emit = defineEmits(['answered']);
-
+const answeredCorrectly = ref(null);
+  const answerResult = ref(false);
 const dialogVisible = ref(true);
 const selectedAnswer = ref(null);
 
@@ -41,7 +47,17 @@ watch(() => props.question, () => {
 });
 
 const submitAnswer = () => {
-  const isCorrect = selectedAnswer.value === props.question.correctAnswer;
+  if (!selectedAnswer.value) {
+    return;
+  }
+  if (props.question.type === 'true-false') {
+    selectedAnswer.value = selectedAnswer.value === 'true';
+  }
+  const isCorrect = selectedAnswer.value === props.question.answer;
+  console.log('selectedAnswer', selectedAnswer.value, props.question.answer);
+  answerResult.value = true;
+  answeredCorrectly.value = isCorrect;
+  console.log('isCorrect', isCorrect);
   emit('answered', isCorrect);
   dialogVisible.value = false;
 };
